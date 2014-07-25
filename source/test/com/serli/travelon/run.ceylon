@@ -52,7 +52,7 @@ Node buildCircle() {
 	Node node = Node();
 	value rootOfCircle = Node([node]);
 	node.kids = [rootOfCircle];
-	node.children = node.kids;
+	node.resetChildren();
 	return rootOfCircle;
 }
 	

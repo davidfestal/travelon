@@ -1,6 +1,6 @@
 shared class All<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		variable [RootType*] reversedNewChildren = [];
 		for (child in visitable.children) {
@@ -13,14 +13,14 @@ shared class All<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 				reversedNewChildren = [visited.node, *reversedNewChildren];
 			}
 		}
-		visitable.children = reversedNewChildren.reversed;
+		visitable.updateChildren(reversedNewChildren.reversed);
 		return visitable;
 	}
 }
 
 shared class Apply<RootType>(Anything(RootType) action) extends Visitor<RootType>()
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		action(visitable.node);
 		return visitable;
@@ -29,7 +29,7 @@ shared class Apply<RootType>(Anything(RootType) action) extends Visitor<RootType
 
 shared class One<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		variable [RootType*] reversedNewChildren = [];
 		for (child in visitable.children) {
@@ -39,7 +39,7 @@ shared class One<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 			}
 			case (is Visitable<RootType,RootType>) {
 				reversedNewChildren = [visited.node, *reversedNewChildren];
-				visitable.children = reversedNewChildren.reversed;
+				visitable.updateChildren(reversedNewChildren.reversed);
 				return visitable;
 			}
 		}
@@ -49,7 +49,7 @@ shared class One<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 
 shared class Some<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		variable Visitable<NodeType,RootType>|Failure result = failure;
 		variable [RootType*] reversedNewChildren = [];
@@ -63,7 +63,7 @@ shared class Some<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 				result = visitable;
 			}
 		}
-		visitable.children = reversedNewChildren.reversed;
+		visitable.updateChildren(reversedNewChildren.reversed);
 		return result;
 	}
 }
@@ -73,9 +73,9 @@ shared abstract class DefinedCombinator<RootType>() extends Visitor<RootType>()
 
 	shared formal Visitor<RootType> definition;
 	
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
-		return definition.internalVisit(visitable);
+		return definition.doVisit(visitable);
 	}
 }
 
@@ -97,7 +97,7 @@ shared class Sequence<RootType>(steps = null) extends Visitor<RootType>()
 		return result;
 	}
 	
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		return visitSteps(reversedSteps(), visitable);
 	}
@@ -111,7 +111,7 @@ shared class Sequence<RootType>(steps = null) extends Visitor<RootType>()
 				return failure;
 			}
 			case (is Visitable<NodeType,RootType>) {
-				return remainingSteps.first.internalVisit(stepResult);
+				return remainingSteps.first.doVisit(stepResult);
 			}
 		} else {
 			return visitable;
@@ -131,22 +131,22 @@ shared class BottomUp<RootType>(Visitor<RootType> v) extends Sequence<RootType>(
 
 shared class Fail<RootType>() extends Visitor<RootType>() 
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType => failure;
 }
 
 shared class Identity<RootType>() extends Visitor<RootType>()
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies Object => visitable;
 }
 
 shared class Not<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 		given RootType satisfies Object {
 	shared actual variable Walker<RootType> walker = MetaModelBasedWalker<RootType>();
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
-		value result = v.internalVisit(visitable);
+		value result = v.doVisit(visitable);
 		switch (result)
 		case (is Failure) {
 			return visitable;
@@ -159,11 +159,11 @@ shared class Not<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
 
 shared class IfThenElse<RootType>(Boolean(RootType) | Visitor<RootType> condition, Visitor<RootType> trueCase, Visitor<RootType> falseCase = Identity<RootType>()) extends Visitor<RootType>()
 		given RootType satisfies Object {
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		Boolean result;
 		if (is Visitor<RootType> condition){
-			result = condition.internalVisit<NodeType>(visitable) != failure;
+			result = condition.doVisit<NodeType>(visitable) != failure;
 		} else if (is Boolean(RootType) condition){
 			result = condition(visitable.node);
 		} else {
@@ -171,9 +171,9 @@ shared class IfThenElse<RootType>(Boolean(RootType) | Visitor<RootType> conditio
 		}
 		
 		if (result) {
-			return trueCase.internalVisit(visitable);
+			return trueCase.doVisit(visitable);
 		} else {
-			return falseCase.internalVisit(visitable);
+			return falseCase.doVisit(visitable);
 		}
 	}
 }
@@ -185,9 +185,9 @@ shared class Child<RootType>(Boolean(RootType) | Visitor<RootType> condition, Vi
  					All(childAction));
 }
 
-shared final class Condition<RootType>(shared Boolean(RootType) condition) extends Visitor<RootType>()
+shared final class Condition<RootType>(Boolean(RootType) condition) extends Visitor<RootType>()
 		given RootType satisfies Object {
-			shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+			shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 					given NodeType satisfies RootType => condition(visitable.node) then visitable else failure;
 }
 
@@ -221,11 +221,11 @@ shared class Choice<RootType>(alternatives = null) extends Visitor<RootType>()
 
 	shared default [Visitor<RootType>, Visitor<RootType>+]? alternatives;
 	
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		if (exists alts = alternatives) {
 			for (alt in alts) {
-				if (is Visitable<NodeType,RootType> result = alt.internalVisit(visitable)) {
+				if (is Visitable<NodeType,RootType> result = alt.doVisit(visitable)) {
 					return result;
 				}
 			}
@@ -268,10 +268,10 @@ shared class DownUp<RootType>(Visitor<RootType> down, Visitor<RootType> up) exte
 shared class LogVisitor<RootType>(Visitor<RootType> visitor, Logger<RootType>  logger) extends Visitor<RootType>() 
 		given RootType satisfies Object {
 
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		logger.log( Event(visitor, visitable.node) );
-		return visitor.internalVisit( visitable );
+		return visitor.doVisit( visitable );
 	}
 	
 }
@@ -284,7 +284,7 @@ shared class LogVisitor<RootType>(Visitor<RootType> visitor, Logger<RootType>  l
 shared class FailAtNodes<RootType>(Visitable<RootType, RootType> *visitables) extends Visitor<RootType>() 
 		given RootType satisfies Object {
 	
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
 		if (visitables.contains(visitable)) {
 			return failure;
@@ -304,9 +304,9 @@ shared class SucceedAtNodes<RootType>(Visitable<RootType, RootType> *visitables)
 		given RootType satisfies Object {
 	Visitor<RootType> success = Not(FailAtNodes(*visitables));
 	
-	shared actual Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> visitable)
+	shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
 			given NodeType satisfies RootType {
-		return success.internalVisit(visitable);
+		return success.doVisit(visitable);
 	}
 	
 }

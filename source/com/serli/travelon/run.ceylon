@@ -1,10 +1,26 @@
 shared abstract class BooleanTerm() of BinaryTerm<BooleanTerm,BooleanTerm> | True | False
-		satisfies Visitable<BooleanTerm, BooleanTerm> {}
+		satisfies Visitable<BooleanTerm, BooleanTerm> {
+	variable {BooleanTerm*}? _children = null;
+	shared formal {BooleanTerm*} initialChildren;
+	shared actual {BooleanTerm*} children {
+		{BooleanTerm*} result;
+		if (exists c=_children) {
+			result = c;
+		} else {
+			result = initialChildren;
+			_children = result;
+		}
+		return result;
+	}
+	shared actual void updateChildren({BooleanTerm*} newChildren) {
+		_children = newChildren;
+	}
+	resetChildren() => _children = initialChildren;
+}
 
 shared abstract class BinaryTerm<out Left = BooleanTerm,out Right = BooleanTerm>(left, right)
 		of And<Left,Right> | Or<Left,Right>
 		extends BooleanTerm()
-		satisfies Visitable<BinaryTerm, BooleanTerm>
 		given Left satisfies BooleanTerm
 		given Right satisfies BooleanTerm {
 	default shared Left left;
@@ -12,13 +28,12 @@ shared abstract class BinaryTerm<out Left = BooleanTerm,out Right = BooleanTerm>
 }
 
 shared class And<out Left = BooleanTerm,out Right = BooleanTerm>(left, right) extends BinaryTerm<Left,Right>(left, right)
-		satisfies Visitable<And, BooleanTerm>
 		given Left satisfies BooleanTerm
 		given Right satisfies BooleanTerm {
 	shared actual Left left;
 	shared actual Right right;
 	shared actual String string => "``left`` and ``right``";
-	shared variable actual {BooleanTerm*} children = {left, right};
+	shared actual {BooleanTerm*} initialChildren = {left, right};
 	shared actual And<Left,Right> node => this;
 }
 
@@ -28,17 +43,17 @@ shared class Or<out Left = BooleanTerm,out Right = BooleanTerm>(left, right) ext
 	shared actual Left left;
 	shared actual Right right;
 	shared actual String string => "(``left`` or ``right``)";
-	shared variable actual {BooleanTerm*} children = {left, right};
+	shared actual {BooleanTerm*} initialChildren = {left, right};
 	shared actual Or<Left,Right> node => this;
 }
 
 shared abstract class True() of myTrue extends BooleanTerm() {
-	shared variable actual {BooleanTerm*} children = {};
+	shared actual {BooleanTerm*} initialChildren = {};
 	shared actual True node => this;
 }
 
 shared abstract class False() of myFalse extends BooleanTerm() {
-	shared variable actual {BooleanTerm*} children = {};
+	shared actual {BooleanTerm*} initialChildren = {};
 	shared actual False node => this;
 }
 
@@ -139,19 +154,21 @@ void testMatchAndRules() {
 
 void testVisitors() {
 	print("TopDown");
-	TopDown(Apply(void(BooleanTerm n) => print(n))).visit(expr1);
+	Some(Condition((BooleanTerm t) => t is Or<False,True>)).visit(expr1);
+	print("TopDown");
+	TopDown(Apply((BooleanTerm n) => print(n))).visit(expr1);
 	print("BottomUp");
-	BottomUp(Apply(void(BooleanTerm n) => print(n))).visit(expr1);
+	BottomUp(Apply((BooleanTerm n) => print(n))).visit(expr1);
 	print("DownUp");
 	DownUp {
-		down = Apply(void(BooleanTerm n) => print("Down : ``n``"));
-		up = Apply(void(BooleanTerm n) => print("Up : ``n``"));
+		down = Apply((BooleanTerm n) => print("Down : ``n``"));
+		up = Apply((BooleanTerm n) => print("Up : ``n``"));
 	}.visit(expr1);
 	
 	print("Descendant");
 	Descendant {
 		condition(BooleanTerm t) => (t is And<True,True>);
-		action = Apply(void(BooleanTerm n) => print("Descendant : ``n``"));
+		action = Apply((BooleanTerm n) => print("Descendant : ``n``"));
 	}.visit(expr1);
 	
 }

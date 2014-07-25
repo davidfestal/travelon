@@ -18,10 +18,21 @@ shared interface Visitable<out NodeType,RootType>
 	shared formal NodeType node;
 	"""
 	   The [[Iterable]] allowing to retrieve its children.
-	   It might be overwritten when the [[Visitable]] is visited by a [[Visitor]].
+	   It might be overwritten through [[updateChildren]] when the [[Visitable]] is visited by a [[Visitor]].
 	   """
-	shared variable formal {RootType*} children;
+	shared formal {RootType*} children;
+	
+	"""
+	   Used by Visitors to change the children that will be visited by the following visitor.
+	   """
+	shared formal void updateChildren({RootType*} newChildren);
+
+	"""
+	   Reset the children to the initial children of the node.
+	   """
+	shared formal void resetChildren();
 }
+
 
 """
    Given a general-purpose object satisfying [[RootType]], the [[Walker]] produced a [[Visitable]] instance that contains ::
@@ -61,8 +72,15 @@ shared class MetaModelBasedWalker<RootType = Object>() satisfies Walker<RootType
 		object visitable
 				satisfies Visitable<NodeType, RootType> {
 			node = parent;
-			shared variable actual {RootType*} children = { for (param in classModel.declaration.parameterDeclarations) 
+			value _initialChildren = Array { for (param in classModel.declaration.parameterDeclarations) 
 				if (param.shared, is ValueDeclaration val = param, is RootType child = val.memberGet(node)) child };
+			variable {RootType*} _children = _initialChildren;
+			children => _children;
+			shared actual void updateChildren({RootType*} newChildren) {
+				_children = newChildren;
+			}
+			resetChildren() => _children = _initialChildren;
+			
 		}
 		return visitable;
 	}
@@ -82,12 +100,30 @@ shared abstract class Visitor<RootType>()
 	
 	"""
 	   Pay a visit to any node.
-	   This is the method called by clients
+	   This is the only visit method that should be called by clients
+	   On the contrary it should not be called by calling visitors
 	   """
 	shared Visitable<NodeType,RootType>|Failure visit<NodeType>(
 		"""
 		   The node being visited.
 		   If it doesn't implement the [[Visitable]] interface, the [[walker]] will be used to produce one.
+		   """
+		NodeType|Visitable<NodeType, RootType> node)
+			given NodeType satisfies RootType {
+		if (is Visitable<NodeType, RootType> node) {
+			node.resetChildren();
+		}
+		return internalVisit<NodeType>(node);
+	}
+    
+	"""
+	   Same as [[doVisit]] but convert the node to a Visitable if necessary.
+	   This is the method can be called by calling visitors, but not by client code
+	   """
+	shared Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(
+		"""
+		   The node being visited.
+		   If it doesn't implement the [[Visitable]] interface, the [[walker]] will be used to provide one.
 		   """
 		NodeType|Visitable<NodeType, RootType> node)
 			given NodeType satisfies RootType {
@@ -99,14 +135,14 @@ shared abstract class Visitor<RootType>()
 			assert (is NodeType node);
 			visitable = walker.walk(node);
 		}
-		return internalVisit(visitable);
+		return doVisit(visitable);
 	}
-	
+
 	"""
 	   Pay a visit to a visitable.
 	   This method must be implemented by concrete visitors
 	   """
-	shared formal Visitable<NodeType,RootType>|Failure internalVisit<NodeType>(Visitable<NodeType,RootType> node)
+	shared formal Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> node)
 			given NodeType satisfies RootType;
 }
 
