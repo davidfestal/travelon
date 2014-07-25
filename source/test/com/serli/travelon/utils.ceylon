@@ -1,8 +1,10 @@
-import com.serli.travelon { Visitable,
-	Visitor,
-	Failure,
-	failure,
-	BooleanTerm }
+import com.serli.travelon {
+    Visitable,
+    Visitor,
+    Failure,
+    failure,
+    BooleanTerm
+}
 
 variable Integer nodeCounter = 0;
 
@@ -11,55 +13,55 @@ variable Integer nodeCounter = 0;
    a different nodeID.
    """
 Node createNode([Node*] kids) {
-	Node result = Node(kids, nodeCounter);
-	nodeCounter++;
-	return result;
+    Node result = Node(kids, nodeCounter);
+    nodeCounter++;
+    return result;
 }
 
 shared Integer countNewNode() {
-	return nodeCounter ++;
+    return nodeCounter++;
 }
 
 shared void resetNodeCounter() {
-	nodeCounter = 0;
+    nodeCounter = 0;
 }
 
 """
    An implementation of the [[Visitable]] interface for
    testing purposes.
    """
-class Node(kids=[], nodeId=countNewNode()) satisfies Visitable<Node, Node> {
-	
-	shared variable [Node*] kids;
-	variable {Node*}? _children = null;
-	Integer nodeId;
-	
-	shared actual {Node*} children {
-		{Node*} result;
-		if (exists c=_children) {
-			result = c;
-		} else {
-			result = kids;
-			_children = result;
-		}
-		return result;
-	}
-	shared actual void updateChildren({Node*} newChildren) {
-		_children = newChildren;
-	}
-	resetChildren() => _children = kids;
-
-	shared Node|Failure accept(Visitor<Node> v) {
-		value result = v.visit<Node>(this);
-		switch(result)
-		case(is Visitable<Node,Node>) {
-			return result.node;
-		}
-		case(is Failure) {
-			return failure;
-		}
-	}
-	
-	string => "Node-``nodeId``";
-	node => this;
+class Node(kids = [], nodeId = countNewNode()) satisfies Visitable<Node,Node> {
+    
+    shared variable [Node*] kids;
+    variable {Node*}? _children = null;
+    Integer nodeId;
+    
+    shared actual {Node*} children {
+        {Node*} result;
+        if (exists c = _children) {
+            result = c;
+        } else {
+            result = kids;
+            _children = result;
+        }
+        return result;
+    }
+    shared actual void updateChildren({Node*} newChildren) {
+        _children = newChildren;
+    }
+    resetChildren() => _children = kids;
+    
+    shared Node|Failure accept(Visitor<Node> v) {
+        value result = v.visit<Node>(this);
+        switch (result)
+        case (is Visitable<Node,Node>) {
+            return result.node;
+        }
+        case (is Failure) {
+            return failure;
+        }
+    }
+    
+    string => "Node-``nodeId``";
+    node => this;
 }

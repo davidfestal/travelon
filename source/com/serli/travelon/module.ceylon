@@ -70,7 +70,6 @@
    
    Additional walkers might be added in the future to accomodate specific trees, such as `ceylon.ast` trees, XML files, etc ...   
    """
-
-by("David Festal")
+by ("David Festal")
 module com.serli.travelon "1.0.0" {
 }
