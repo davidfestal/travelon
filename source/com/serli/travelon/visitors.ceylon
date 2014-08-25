@@ -1,9 +1,10 @@
+
 shared class All<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
         given RootType satisfies Object {
     shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
             given NodeType satisfies RootType {
         variable [RootType*] reversedNewChildren = [];
-        for (child in visitable.children) {
+        for (child in visitable.childrenToVisit) {
             Visitable<RootType,RootType>|Failure visited = v.visit(child);
             switch (visited)
             case (is Failure) {
@@ -13,8 +14,7 @@ shared class All<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
                 reversedNewChildren = [visited.node, *reversedNewChildren];
             }
         }
-        visitable.updateChildren(reversedNewChildren.reversed);
-        return visitable;
+        return visitable.updateChildrenToVisit(reversedNewChildren.reversed);
     }
 }
 
@@ -32,15 +32,14 @@ shared class One<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
     shared actual Visitable<NodeType,RootType>|Failure doVisit<NodeType>(Visitable<NodeType,RootType> visitable)
             given NodeType satisfies RootType {
         variable [RootType*] reversedNewChildren = [];
-        for (child in visitable.children) {
+        for (child in visitable.childrenToVisit) {
             Visitable<RootType,RootType>|Failure visited = v.visit(child);
             switch (visited)
             case (is Failure) {
             }
             case (is Visitable<RootType,RootType>) {
                 reversedNewChildren = [visited.node, *reversedNewChildren];
-                visitable.updateChildren(reversedNewChildren.reversed);
-                return visitable;
+                return visitable.updateChildrenToVisit(reversedNewChildren.reversed);
             }
         }
         return failure;
@@ -53,7 +52,7 @@ shared class Some<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
             given NodeType satisfies RootType {
         variable Visitable<NodeType,RootType>|Failure result = failure;
         variable [RootType*] reversedNewChildren = [];
-        for (child in visitable.children) {
+        for (child in visitable.childrenToVisit) {
             Visitable<RootType,RootType>|Failure visited = v.visit(child);
             switch (visited)
             case (is Failure) {
@@ -63,8 +62,7 @@ shared class Some<RootType>(Visitor<RootType> v) extends Visitor<RootType>()
                 result = visitable;
             }
         }
-        visitable.updateChildren(reversedNewChildren.reversed);
-        return result;
+        return visitable.updateChildrenToVisit(reversedNewChildren.reversed);
     }
 }
 

@@ -20,12 +20,12 @@ shared interface Visitable<out NodeType,RootType>
           The [[Iterable]] allowing to retrieve its children.
           It might be overwritten through [[updateChildren]] when the [[Visitable]] is visited by a [[Visitor]].
           """
-    shared formal {RootType*} children;
+    shared formal {RootType*} childrenToVisit;
     
     """
           Used by Visitors to change the children that will be visited by the following visitor.
           """
-    shared formal void updateChildren({RootType*} newChildren);
+    shared formal Visitable<NodeType,RootType> updateChildrenToVisit({RootType*} newChildren);
     
     """
           Reset the children to the initial children of the node.
@@ -74,9 +74,10 @@ shared class MetaModelBasedWalker<RootType = Object>() satisfies Walker<RootType
             value _initialChildren = Array { for (param in classModel.declaration.parameterDeclarations)
                     if (param.shared, is ValueDeclaration val = param, is RootType child = val.memberGet(node)) child };
             variable {RootType*} _children = _initialChildren;
-            children => _children;
-            shared actual void updateChildren({RootType*} newChildren) {
+            childrenToVisit => _children;
+            shared actual Visitable<NodeType,RootType> updateChildrenToVisit({RootType*} newChildren) {
                 _children = newChildren;
+                return this;
             }
             resetChildren() => _children = _initialChildren;
         }

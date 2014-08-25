@@ -2,8 +2,7 @@ import com.serli.travelon {
     Visitable,
     Visitor,
     Failure,
-    failure,
-    BooleanTerm
+    failure
 }
 
 variable Integer nodeCounter = 0;
@@ -36,7 +35,7 @@ class Node(kids = [], nodeId = countNewNode()) satisfies Visitable<Node,Node> {
     variable {Node*}? _children = null;
     Integer nodeId;
     
-    shared actual {Node*} children {
+    shared actual {Node*} childrenToVisit {
         {Node*} result;
         if (exists c = _children) {
             result = c;
@@ -46,8 +45,9 @@ class Node(kids = [], nodeId = countNewNode()) satisfies Visitable<Node,Node> {
         }
         return result;
     }
-    shared actual void updateChildren({Node*} newChildren) {
+    shared actual Visitable<Node,Node> updateChildrenToVisit({Node*} newChildren) {
         _children = newChildren;
+        return this;
     }
     resetChildren() => _children = kids;
     
